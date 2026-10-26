@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction Records | EduPortal{% endblock %}
+
+{% block content %}
+<div class="page-header-block" style="display:flex; justify-content:space-between; align-items:flex-end;">
+    <div>
+        <span class="eyebrow-tag">ADMINISTRATION / RECORDS</span>
+        <h1 class="page-title">Exams & Prediction Records</h1>
+        <p class="page-desc">Comprehensive log of all student machine learning prediction assessments.</p>
+    </div>
+
+    <span class="pill-badge pill-paid" style="font-size:13px; padding:6px 14px;">
+        {{ records|length }} Records Logged
+    </span>
+</div>
+
+<div class="edu-card">
+    <div class="edu-card-header">
+        <span class="edu-card-title">All Student Predictions</span>
+        <span style="font-size:12px; color:var(--text-muted);">Showing recent evaluations</span>
+    </div>
+
+    {% if records %}
+    <div class="edu-table-wrap">
+        <table class="edu-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Email Address</th>
+                    <th>Outcome</th>
+                    <th>Study Hours</th>
+                    <th>Attendance</th>
+                    <th>Previous Marks</th>
+                    <th>Assignment Marks</th>
+                    <th>Confidence</th>
+                    <th>Date & Time</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set avatar_palette = ['avatar-purple', 'avatar-cyan', 'avatar-orange', 'avatar-pink', 'avatar-green', 'avatar-blue'] %}
+                {% for item in records %}
+                <tr>
+                    <td>
+                        <div class="student-cell">
+                            <div class="table-avatar {{ avatar_palette[loop.index0 % avatar_palette|length] }}">
+                                {% if item.student_name and item.student_name|length >= 2 %}
+                                    {{ item.student_name.split()[0][0]|upper }}{% if item.student_name.split()|length > 1 %}{{ item.student_name.split()[-1][0]|upper }}{% endif %}
+                                {% else %}
+                                    {{ (item.student_name or 'S')[0]|upper }}
+                                {% endif %}
+                            </div>
+                            <div class="student-name-text">
+                                {{ item.student_name if item.student_name else 'Student' }}
+                            </div>
+                        </div>
+                    </td>
+                    <td style="color:var(--text-secondary); font-size:12.5px;">{{ item.student_email }}</td>
+                    <td>
+                        {% if item.prediction|lower == 'pass' %}
+                            <span class="pill-badge pill-paid">Pass</span>
+                        {% elif item.prediction|lower == 'fail' %}
+                            <span class="pill-badge pill-overdue">Fail</span>
+                        {% else %}
+                            <span class="pill-badge pill-pending">{{ item.prediction }}</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ item.inputs.get('Study_Hours', '—') }} hrs/day</td>
+                    <td>{{ item.inputs.get('Attendance', '—') }}%</td>
+                    <td>{{ item.inputs.get('Previous_Marks', '—') }}</td>
+                    <td>{{ item.inputs.get('Assignment_Marks', '—') }}</td>
+                    <td>
+                        {% if item.confidence is not none %}
+                            <span style="color:var(--accent-mint); font-weight:600;">{{ "%.2f"|format(item.confidence|float) }}%</span>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td style="color:var(--text-muted); font-size:12px;">
+                        {{ item.created_at.strftime('%d %b %Y, %I:%M %p') if item.created_at else '—' }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state-block">
+        <span class="empty-state-icon">📋</span>
+        <span class="empty-state-title">No predictions recorded yet</span>
+        <p class="empty-state-text">Predictions will appear here as students use the prediction tool.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Students | EduPortal{% endblock %}
+
+{% block content %}
+<div class="page-header-block" style="display:flex; justify-content:space-between; align-items:flex-end;">
+    <div>
+        <span class="eyebrow-tag">ADMINISTRATION / ENROLLMENT</span>
+        <h1 class="page-title">Manage Students</h1>
+        <p class="page-desc">Review registered student accounts, monitor access status, and manage active permissions.</p>
+    </div>
+
+    <span class="pill-badge pill-paid" style="font-size:13px; padding:6px 14px;">
+        {{ students|length }} Students Registered
+    </span>
+</div>
+
+<div class="edu-card">
+    <div class="edu-card-header">
+        <span class="edu-card-title">Student Directory</span>
+        <span style="font-size:12px; color:var(--text-muted);">Admin accounts are securely protected</span>
+    </div>
+
+    {% if students %}
+    <div class="edu-table-wrap">
+        <table class="edu-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Email Address</th>
+                    <th>Date Joined</th>
+                    <th>Account Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set avatar_palette = ['avatar-purple', 'avatar-cyan', 'avatar-orange', 'avatar-pink', 'avatar-green', 'avatar-blue'] %}
+                {% for student in students %}
+                <tr>
+                    <td>
+                        <div class="student-cell">
+                            <div class="table-avatar {{ avatar_palette[loop.index0 % avatar_palette|length] }}">
+                                {% if student.name and student.name|length >= 2 %}
+                                    {{ student.name.split()[0][0]|upper }}{% if student.name.split()|length > 1 %}{{ student.name.split()[-1][0]|upper }}{% endif %}
+                                {% else %}
+                                    {{ (student.name or 'S')[0]|upper }}
+                                {% endif %}
+                            </div>
+                            <div class="student-name-text">
+                                {{ student.name }}
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ student.email }}</td>
+                    <td style="color:var(--text-muted); font-size:12px;">
+                        {{ student.created_at.strftime('%d %b %Y') if student.created_at else '—' }}
+                    </td>
+                    <td>
+                        {% if student.get('active', true) %}
+                            <span class="pill-badge pill-paid">Active</span>
+                        {% else %}
+                            <span class="pill-badge pill-overdue">Disabled</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="POST" action="{{ url_for('toggle_user', user_id=student._id) }}" data-confirm="Change access status for {{ student.name }}?">
+                            {% if student.get('active', true) %}
+                                <button type="submit" class="btn-secondary" style="color:var(--status-red); border-color:rgba(239,68,68,0.3); padding:5px 12px; font-size:12px;">
+                                    Disable
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn-secondary" style="color:var(--accent-mint); border-color:rgba(0,210,147,0.3); padding:5px 12px; font-size:12px;">
+                                    Enable
+                                </button>
+                            {% endif %}
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state-block">
+        <span class="empty-state-icon">👥</span>
+        <span class="empty-state-title">No students registered</span>
+        <p class="empty-state-text">Registered student accounts will automatically appear in this table.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

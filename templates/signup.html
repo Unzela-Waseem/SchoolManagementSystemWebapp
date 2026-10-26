@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Create Account | EduPortal{% endblock %}
+
+{% block auth_content %}
+<div class="auth-card-panel">
+    <div class="auth-brand-head">
+        <div class="brand-icon">🎓</div>
+        <div class="brand-text">
+            <span class="brand-title">EduPortal</span>
+            <span class="brand-subtitle">School Management</span>
+        </div>
+    </div>
+
+    <h1 class="auth-card-title">Create student account</h1>
+    <p class="auth-card-subtitle">Fill in the details below to access performance predictions.</p>
+
+    <form method="POST" action="{{ url_for('signup') }}" class="auth-form-stack">
+        <div class="form-group">
+            <label for="name" class="form-label">Full name</label>
+            <input id="name" name="name" type="text" placeholder="e.g. Ahmed Khan" required minlength="2" autocomplete="name" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="email" class="form-label">Email address</label>
+            <input id="email" name="email" type="email" placeholder="student@example.com" required autocomplete="email" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input id="password" name="password" type="password" placeholder="At least 8 characters" required minlength="8" autocomplete="new-password" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="confirm_password" class="form-label">Confirm password</label>
+            <input id="confirm_password" name="confirm_password" type="password" placeholder="Re-enter your password" required minlength="8" autocomplete="new-password" class="form-control">
+        </div>
+
+        <button class="auth-btn-submit" type="submit">
+            Create account →
+        </button>
+    </form>
+
+    <p class="auth-foot-link">
+        Already registered? <a href="{{ url_for('login') }}">Sign in here</a>
+    </p>
+</div>
+{% endblock %}

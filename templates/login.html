@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In | EduPortal{% endblock %}
+
+{% block auth_content %}
+<div class="auth-card-panel">
+    <div class="auth-brand-head">
+        <div class="brand-icon">🎓</div>
+        <div class="brand-text">
+            <span class="brand-title">EduPortal</span>
+            <span class="brand-subtitle">School Management</span>
+        </div>
+    </div>
+
+    <h1 class="auth-card-title">Sign in to EduPortal</h1>
+    <p class="auth-card-subtitle">Enter your credentials to access your academic dashboard.</p>
+
+    <form method="POST" action="{{ url_for('login') }}" class="auth-form-stack">
+        <div class="form-group">
+            <label for="email" class="form-label">Email address</label>
+            <input id="email" name="email" type="email" placeholder="you@example.com" required autocomplete="email" class="form-control">
+        </div>
+
+        <div class="form-group">
+            <label for="password" class="form-label">Password</label>
+            <input id="password" name="password" type="password" placeholder="Enter your password" required autocomplete="current-password" class="form-control">
+        </div>
+
+        <button class="auth-btn-submit" type="submit">
+            Sign in →
+        </button>
+    </form>
+
+    <p class="auth-foot-link">
+        New student? <a href="{{ url_for('signup') }}">Create a student account</a>
+    </p>
+</div>
+{% endblock %}

@@ -1,0 +1,294 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard | EduPortal{% endblock %}
+
+{% block content %}
+<div class="dashboard-grid-edu">
+
+    <!-- Stat Summary Boxes -->
+    <div class="stats-overview-row">
+        <div class="stat-box">
+            <div class="stat-box-header">
+                <span class="stat-box-title">Total Predictions</span>
+                <div class="stat-box-icon" style="background:var(--accent-mint-dim); color:var(--accent-mint);">▦</div>
+            </div>
+            <div class="stat-box-value">{{ total }}</div>
+            <span class="stat-box-subtitle">Saved to your account</span>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-box-header">
+                <span class="stat-box-title">Model Status</span>
+                <div class="stat-box-icon" style="background:var(--accent-cyan-dim); color:var(--accent-cyan);">✳</div>
+            </div>
+            <div class="stat-box-value" style="font-size:22px; color:var(--accent-mint);">Ready</div>
+            <span class="stat-box-subtitle">4 academic features</span>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-box-header">
+                <span class="stat-box-title">Recent Result</span>
+                <div class="stat-box-icon" style="background:var(--accent-gold-dim); color:var(--accent-gold);">★</div>
+            </div>
+            <div class="stat-box-value" style="font-size:22px;">
+                {% if recent and recent[0].prediction %}
+                    {{ recent[0].prediction|upper }}
+                {% else %}
+                    —
+                {% endif %}
+            </div>
+            <span class="stat-box-subtitle">
+                {% if recent and recent[0].confidence is not none %}
+                    {{ "%.1f"|format(recent[0].confidence|float) }}% confidence
+                {% else %}
+                    No predictions yet
+                {% endif %}
+            </span>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-box-header">
+                <span class="stat-box-title">Data Export</span>
+                <div class="stat-box-icon" style="background:rgba(139,92,246,0.15); color:var(--accent-purple);">📥</div>
+            </div>
+            <div class="stat-box-value" style="font-size:18px; margin-top:8px;">
+                <a href="{{ url_for('download_prediction_csv') }}" style="color:var(--accent-cyan); font-size:13px; text-decoration:underline;">CSV</a>
+                <span style="color:var(--text-muted); font-size:13px;"> · </span>
+                <a href="{{ url_for('download_prediction_excel') }}" style="color:var(--accent-mint); font-size:13px; text-decoration:underline;">Excel</a>
+            </div>
+            <span class="stat-box-subtitle">Instant file download</span>
+        </div>
+    </div>
+
+    <!-- Top Charts Row (Matches Screenshot: Line chart on left, Donut on right) -->
+    <div class="grid-row-two-col">
+
+        <!-- Left Card: Trend Graph -->
+        <div class="edu-card">
+            <div class="edu-card-header">
+                <span class="edu-card-title">Academic performance trend</span>
+                <span style="font-size:12px; color:var(--text-muted);">Weekly evaluation</span>
+            </div>
+
+            <div class="chart-container">
+                <!-- SVG Line Chart styled exactly like screenshot with teal & gold lines -->
+                <svg class="chart-svg" viewBox="0 0 600 140" preserveAspectRatio="none">
+                    <!-- Background Grid lines -->
+                    <line x1="0" y1="20" x2="600" y2="20" stroke="rgba(255,255,255,0.04)" stroke-dasharray="3,3" />
+                    <text x="5" y="24" fill="#64748b" font-size="10">95%</text>
+
+                    <line x1="0" y1="70" x2="600" y2="70" stroke="rgba(255,255,255,0.04)" stroke-dasharray="3,3" />
+                    <text x="5" y="74" fill="#64748b" font-size="10">90%</text>
+
+                    <line x1="0" y1="120" x2="600" y2="120" stroke="rgba(255,255,255,0.04)" stroke-dasharray="3,3" />
+                    <text x="5" y="124" fill="#64748b" font-size="10">85%</text>
+
+                    <!-- Amber / Gold Upper Line -->
+                    <path d="M 40,25 Q 160,20 280,18 T 460,22 T 580,15"
+                          fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round" />
+
+                    <!-- Mint / Teal Lower Line with smooth gradient fill -->
+                    <defs>
+                        <linearGradient id="mintGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#00d293" stop-opacity="0.25"/>
+                            <stop offset="100%" stop-color="#00d293" stop-opacity="0.0"/>
+                        </linearGradient>
+                    </defs>
+                    <path d="M 40,85 L 140,65 L 240,78 L 340,32 L 440,46 L 580,36 L 580,140 L 40,140 Z"
+                          fill="url(#mintGrad)" />
+                    <path d="M 40,85 L 140,65 L 240,78 L 340,32 L 440,46 L 580,36"
+                          fill="none" stroke="#00d293" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+
+                <div class="chart-x-axis">
+                    <span>Week 1</span>
+                    <span>Week 2</span>
+                    <span>Week 3</span>
+                    <span>Week 4</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Card: Student Distribution / Standing Donut -->
+        <div class="edu-card">
+            <div class="edu-card-header">
+                <span class="edu-card-title">Performance standing</span>
+            </div>
+
+            <div class="donut-section">
+                <div class="donut-visual-wrap">
+                    <svg viewBox="0 0 100 100" width="130" height="130">
+                        <!-- Circle background track -->
+                        <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="11"/>
+                        <!-- Cyan segment -->
+                        <circle cx="50" cy="50" r="38" fill="none" stroke="#38bdf8" stroke-width="11"
+                                stroke-dasharray="140 240" stroke-dashoffset="0" stroke-linecap="round"/>
+                        <!-- Mint segment -->
+                        <circle cx="50" cy="50" r="38" fill="none" stroke="#00d293" stroke-width="11"
+                                stroke-dasharray="65 240" stroke-dashoffset="-145" stroke-linecap="round"/>
+                        <!-- Gold segment -->
+                        <circle cx="50" cy="50" r="38" fill="none" stroke="#f59e0b" stroke-width="11"
+                                stroke-dasharray="35 240" stroke-dashoffset="-215" stroke-linecap="round"/>
+                    </svg>
+                    <div class="donut-center-text">
+                        <span class="donut-center-value">88%</span>
+                        <span class="donut-center-label">Pass rate</span>
+                    </div>
+                </div>
+
+                <div class="donut-legend">
+                    <div class="legend-item">
+                        <div class="legend-left">
+                            <span class="legend-dot" style="background:#00d293;"></span>
+                            <span>High Probability (Pass)</span>
+                        </div>
+                        <span class="legend-val">74%</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-left">
+                            <span class="legend-dot" style="background:#38bdf8;"></span>
+                            <span>Moderate Standing</span>
+                        </div>
+                        <span class="legend-val">18%</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-left">
+                            <span class="legend-dot" style="background:#f59e0b;"></span>
+                            <span>Needs Attention</span>
+                        </div>
+                        <span class="legend-val">8%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bottom Row (Matches Screenshot: Recent Admissions Table on Left, Upcoming Events on Right) -->
+    <div class="grid-row-two-col">
+
+        <!-- Left: Recent Predictions Table -->
+        <div class="edu-card">
+            <div class="edu-card-header">
+                <span class="edu-card-title">Recent predictions</span>
+                <a href="{{ url_for('student_history') }}" class="edu-card-action">View all</a>
+            </div>
+
+            {% if recent %}
+            <div class="edu-table-wrap">
+                <table class="edu-table">
+                    <thead>
+                        <tr>
+                            <th>Student</th>
+                            <th>Study Hours</th>
+                            <th>Attendance</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% set avatar_classes = ['avatar-purple', 'avatar-cyan', 'avatar-orange', 'avatar-pink', 'avatar-green'] %}
+                        {% for item in recent %}
+                        <tr>
+                            <td>
+                                <div class="student-cell">
+                                    <div class="table-avatar {{ avatar_classes[loop.index0 % avatar_classes|length] }}">
+                                        {% if current_user.name and current_user.name|length >= 2 %}
+                                            {{ current_user.name.split()[0][0]|upper }}{% if current_user.name.split()|length > 1 %}{{ current_user.name.split()[-1][0]|upper }}{% endif %}
+                                        {% else %}
+                                            {{ (current_user.name or 'S')[0]|upper }}
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="student-name-text">{{ current_user.name if current_user.name else 'Student' }}</div>
+                                        <div style="font-size:11px; color:var(--text-muted);">
+                                            {{ item.created_at.strftime('%d %b %Y') if item.created_at else 'Recent' }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ item.inputs.get('Study_Hours', '—') }} hrs/day</td>
+                            <td>{{ item.inputs.get('Attendance', '—') }}%</td>
+                            <td>
+                                {% if item.prediction|lower == 'pass' %}
+                                    <span class="pill-badge pill-paid">Paid / Pass</span>
+                                {% elif item.prediction|lower == 'fail' %}
+                                    <span class="pill-badge pill-overdue">Overdue / Fail</span>
+                                {% else %}
+                                    <span class="pill-badge pill-pending">{{ item.prediction }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state-block">
+                <span class="empty-state-icon">📋</span>
+                <span class="empty-state-title">No predictions recorded yet</span>
+                <p class="empty-state-text">Enter your academic marks to generate and track your predictions.</p>
+                <a href="{{ url_for('student_index') }}" class="btn-primary-cta" style="margin-top:10px;">
+                    + Predict performance
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right: Upcoming Events -->
+        <div class="edu-card">
+            <div class="edu-card-header">
+                <span class="edu-card-title">Upcoming events</span>
+                <span class="edu-card-action" style="color:var(--accent-mint); cursor:pointer;">Calendar</span>
+            </div>
+
+            <div class="events-list">
+                <div class="event-item">
+                    <div class="event-date-chip">
+                        <span class="month">OCT</span>
+                        <span class="day">29</span>
+                    </div>
+                    <div class="event-details">
+                        <span class="event-title">Parent-teacher meeting</span>
+                        <span class="event-sub">Classes 6 to 8 · 10:00 AM</span>
+                    </div>
+                </div>
+
+                <div class="event-item">
+                    <div class="event-date-chip">
+                        <span class="month">NOV</span>
+                        <span class="day">02</span>
+                    </div>
+                    <div class="event-details">
+                        <span class="event-title">Mid-term exams begin</span>
+                        <span class="event-sub">All classes · 8:30 AM</span>
+                    </div>
+                </div>
+
+                <div class="event-item">
+                    <div class="event-date-chip">
+                        <span class="month">NOV</span>
+                        <span class="day">09</span>
+                    </div>
+                    <div class="event-details">
+                        <span class="event-title">Iqbal Day holiday</span>
+                        <span class="event-sub">School closed</span>
+                    </div>
+                </div>
+
+                <div class="event-item">
+                    <div class="event-date-chip">
+                        <span class="month">NOV</span>
+                        <span class="day">15</span>
+                    </div>
+                    <div class="event-details">
+                        <span class="event-title">Semester project review</span>
+                        <span class="event-sub">Final submission window</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

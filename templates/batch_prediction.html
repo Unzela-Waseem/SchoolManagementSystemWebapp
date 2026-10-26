@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Batch Prediction (CSV & Excel) | EduPortal{% endblock %}
+
+{% block content %}
+<div class="page-header-block" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+    <div>
+        <span class="eyebrow-tag">BATCH EVALUATION / MACHINE LEARNING</span>
+        <h1 class="page-title">Multi-Student Batch Prediction</h1>
+        <p class="page-desc">Upload your CSV or Excel file to predict pass/fail outcomes for multiple students simultaneously.</p>
+    </div>
+
+    <!-- Quick Sample Downloads -->
+    <div style="display:flex; gap:10px;">
+        <a href="{{ url_for('download_sample_csv') }}" class="btn-download btn-dl-csv" title="Sample CSV template download karein">
+            <span>📄</span>
+            <span>Sample CSV</span>
+        </a>
+        <a href="{{ url_for('download_sample_excel') }}" class="btn-download btn-dl-xlsx" title="Sample Excel template download karein">
+            <span>📊</span>
+            <span>Sample Excel</span>
+        </a>
+    </div>
+</div>
+
+<!-- Upload & Guide Card -->
+<div class="edu-card" style="margin-bottom:24px;">
+    <div class="edu-card-header">
+        <div>
+            <span class="edu-card-title">Upload Student Dataset</span>
+            <p style="font-size:12.5px; color:var(--text-muted); margin-top:3px;">
+                Supported formats: <strong>.xlsx, .xls, .csv</strong>
+            </p>
+        </div>
+        <span class="pill-badge pill-paid">Instant ML Processing</span>
+    </div>
+
+    <form method="POST" action="{{ url_for('batch_prediction') }}" enctype="multipart/form-data" style="display:flex; flex-direction:column; gap:18px;">
+        <div class="file-upload-dropzone">
+            <input type="file" id="file" name="file" accept=".csv, .xlsx, .xls" required class="file-input-hidden" onchange="updateFileName(this)">
+            <label for="file" class="file-dropzone-label">
+                <div class="dropzone-icon">📁</div>
+                <div class="dropzone-title" id="dropzone-text">Click to choose CSV or Excel file, or drag and drop here</div>
+                <div class="dropzone-sub">Files up to 10 MB (CSV, XLSX, XLS)</div>
+            </label>
+        </div>
+
+        <!-- Column Requirements Note -->
+        <div style="background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px 18px; font-size:12.5px; color:var(--text-secondary);">
+            <strong style="color:var(--text-primary); display:block; margin-bottom:6px;">📋 Required Columns in your File:</strong>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:8px;">
+                <div>• <code style="color:var(--accent-mint);">Study_Hours</code> (0–24)</div>
+                <div>• <code style="color:var(--accent-mint);">Attendance</code> (0–100)</div>
+                <div>• <code style="color:var(--accent-mint);">Previous_Marks</code> (0–100)</div>
+                <div>• <code style="color:var(--accent-mint);">Assignment_Marks</code> (0–100)</div>
+            </div>
+            <div style="margin-top:8px; color:var(--text-muted); font-size:11.5px;">
+                Optional columns: <code style="color:var(--accent-cyan);">Student_Name</code>, <code style="color:var(--accent-cyan);">Roll_No</code> (agar honge to results table aur download file mein shamil honge).
+            </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end;">
+            <button type="submit" class="btn-primary-cta" style="padding:11px 24px; font-size:14px;">
+                <span>⚡</span>
+                <span>Run Batch Prediction</span>
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Results & KPI Analytics (If prediction completed) -->
+{% if summary and results %}
+
+<!-- KPI Cards -->
+<div class="stats-overview-row">
+    <div class="stat-box">
+        <div class="stat-box-header">
+            <span class="stat-box-title">Total Evaluated</span>
+            <div class="stat-box-icon" style="background:var(--accent-cyan-dim); color:var(--accent-cyan);">👥</div>
+        </div>
+        <div class="stat-box-value">{{ summary.total }}</div>
+        <span class="stat-box-subtitle">Students in {{ summary.filename }}</span>
+    </div>
+
+    <div class="stat-box" style="border-color:rgba(16,185,129,0.3);">
+        <div class="stat-box-header">
+            <span class="stat-box-title">Predicted Pass</span>
+            <div class="stat-box-icon" style="background:var(--status-green-dim); color:var(--status-green);">✓</div>
+        </div>
+        <div class="stat-box-value" style="color:var(--status-green);">{{ summary.pass_count }}</div>
+        <span class="stat-box-subtitle">
+            <strong style="color:var(--status-green);">{{ summary.pass_rate }}%</strong> pass rate
+        </span>
+    </div>
+
+    <div class="stat-box" style="border-color:rgba(239,68,68,0.3);">
+        <div class="stat-box-header">
+            <span class="stat-box-title">Predicted Fail (At-Risk)</span>
+            <div class="stat-box-icon" style="background:var(--status-red-dim); color:var(--status-red);">!</div>
+        </div>
+        <div class="stat-box-value" style="color:var(--status-red);">{{ summary.fail_count }}</div>
+        <span class="stat-box-subtitle">
+            Needs extra academic support
+        </span>
+    </div>
+
+    <div class="stat-box">
+        <div class="stat-box-header">
+            <span class="stat-box-title">Avg Confidence</span>
+            <div class="stat-box-icon" style="background:var(--accent-gold-dim); color:var(--accent-gold);">★</div>
+        </div>
+        <div class="stat-box-value" style="color:var(--accent-gold);">{{ summary.avg_confidence }}%</div>
+        <span class="stat-box-subtitle">Model probability certainty</span>
+    </div>
+</div>
+
+<!-- Results Table & Export Actions -->
+<div class="edu-card">
+    <div class="edu-card-header" style="flex-wrap:wrap; gap:12px;">
+        <div>
+            <span class="edu-card-title">Prediction Results for All Students</span>
+            <p style="font-size:12px; color:var(--text-muted); margin-top:2px;">
+                Data is saved and ready for download in Excel or CSV.
+            </p>
+        </div>
+
+        <div style="display:flex; gap:10px;">
+            <a href="{{ url_for('download_batch_excel') }}" class="btn-download btn-dl-xlsx" title="Results Excel mein download karein">
+                <span>📊</span>
+                <span>Download Results (Excel)</span>
+            </a>
+            <a href="{{ url_for('download_batch_csv') }}" class="btn-download btn-dl-csv" title="Results CSV mein download karein">
+                <span>📄</span>
+                <span>Download Results (CSV)</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="edu-table-wrap">
+        <table class="edu-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Student Name</th>
+                    <th>Roll No</th>
+                    <th>Study Hours</th>
+                    <th>Attendance</th>
+                    <th>Previous Marks</th>
+                    <th>Assignment Marks</th>
+                    <th>Outcome</th>
+                    <th>Confidence</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set avatar_colors = ['avatar-purple', 'avatar-cyan', 'avatar-orange', 'avatar-pink', 'avatar-green', 'avatar-blue'] %}
+                {% for row in results %}
+                <tr>
+                    <td style="color:var(--text-muted); font-size:11px;">{{ loop.index }}</td>
+                    <td>
+                        <div class="student-cell">
+                            <div class="table-avatar {{ avatar_colors[loop.index0 % avatar_colors|length] }}">
+                                {{ (row.Student_Name or 'S')[0]|upper }}
+                            </div>
+                            <span class="student-name-text">{{ row.Student_Name }}</span>
+                        </div>
+                    </td>
+                    <td><span style="color:var(--text-secondary); font-size:12px;">{{ row.Roll_No }}</span></td>
+                    <td>{{ row.Study_Hours }} hrs/day</td>
+                    <td>{{ row.Attendance }}%</td>
+                    <td>{{ row.Previous_Marks }}</td>
+                    <td>{{ row.Assignment_Marks }}</td>
+                    <td>
+                        {% if row.Prediction|lower == 'pass' %}
+                            <span class="pill-badge pill-paid">✓ Pass</span>
+                        {% elif row.Prediction|lower == 'fail' %}
+                            <span class="pill-badge pill-overdue">! Fail</span>
+                        {% else %}
+                            <span class="pill-badge pill-pending">{{ row.Prediction }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.Confidence is not none and row.Confidence != '' %}
+                            <span style="color:var(--accent-mint); font-weight:600;">{{ "%.2f"|format(row.Confidence|float) }}%</span>
+                        {% else %}
+                            <span style="color:var(--text-muted);">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endif %}
+
+<script>
+function updateFileName(input) {
+    const textElem = document.getElementById('dropzone-text');
+    if (input.files && input.files.length > 0) {
+        textElem.innerHTML = 'Selected: <strong style="color:var(--accent-mint);">' + input.files[0].name + '</strong>';
+    }
+}
+</script>
+
+{% endblock %}

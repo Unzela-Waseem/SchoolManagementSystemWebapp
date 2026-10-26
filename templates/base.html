@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="EduPortal StudentIQ — School Management & ML Performance Analytics">
+    <title>{% block title %}EduPortal | School Management{% endblock %}</title>
+
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Script -->
+    <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+</head>
+<body>
+
+{% if current_user %}
+
+<div class="app-shell">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar">
+
+        <!-- Brand matching reference EduPortal -->
+        <a class="brand" href="{{ url_for('dashboard') }}">
+            <div class="brand-icon">🎓</div>
+            <div class="brand-text">
+                <span class="brand-title">EduPortal</span>
+                <span class="brand-subtitle">School Management</span>
+            </div>
+        </a>
+
+        <!-- Menu Section Label -->
+        <div class="menu-label">Menu</div>
+
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar-nav">
+            {% if current_user.role == 'admin' %}
+                <a class="nav-link {% if request.endpoint == 'admin_dashboard' %}active{% endif %}"
+                   href="{{ url_for('admin_dashboard') }}">
+                    <span class="nav-icon">▦</span>
+                    <span>Dashboard</span>
+                </a>
+
+                <a class="nav-link {% if request.endpoint == 'admin_users' %}active{% endif %}"
+                   href="{{ url_for('admin_users') }}">
+                    <span class="nav-icon">👥</span>
+                    <span>Students</span>
+                </a>
+
+                <a class="nav-link {% if request.endpoint == 'admin_history' %}active{% endif %}"
+                   href="{{ url_for('admin_history') }}">
+                    <span class="nav-icon">📋</span>
+                    <span>Exams & results</span>
+                </a>
+
+                <a class="nav-link {% if request.endpoint == 'batch_prediction' %}active{% endif %}"
+                   href="{{ url_for('batch_prediction') }}">
+                    <span class="nav-icon">📁</span>
+                    <span>Batch Predict (Excel/CSV)</span>
+                </a>
+
+            {% else %}
+                <a class="nav-link {% if request.endpoint == 'student_dashboard' %}active{% endif %}"
+                   href="{{ url_for('student_dashboard') }}">
+                    <span class="nav-icon">▦</span>
+                    <span>Dashboard</span>
+                </a>
+
+                <a class="nav-link {% if request.endpoint == 'student_index' %}active{% endif %}"
+                   href="{{ url_for('student_index') }}">
+                    <span class="nav-icon">✳</span>
+                    <span>Predict Performance</span>
+                </a>
+
+                <a class="nav-link {% if request.endpoint == 'batch_prediction' %}active{% endif %}"
+                   href="{{ url_for('batch_prediction') }}">
+                    <span class="nav-icon">📁</span>
+                    <span>Batch Predict (Excel/CSV)</span>
+                </a>
+
+                <a class="nav-link {% if request.endpoint == 'student_history' %}active{% endif %}"
+                   href="{{ url_for('student_history') }}">
+                    <span class="nav-icon">◷</span>
+                    <span>My History</span>
+                </a>
+            {% endif %}
+        </nav>
+
+        <!-- Sidebar Bottom: Profile Card -->
+        <div class="sidebar-bottom">
+
+            {% if not current_user.name %}
+            <!-- Quick Name Fix if user name is missing -->
+            <div class="name-fix-box">
+                <span style="font-size:10.5px; color:var(--accent-mint); font-weight:600;">⚠️ Apna naam darj karein:</span>
+                <form method="POST" action="{{ url_for('update_profile_name') }}" style="display:flex; flex-direction:column; gap:4px;">
+                    <input type="text" name="name" placeholder="Full name likhein" required minlength="2" class="name-fix-input">
+                    <button type="submit" class="name-fix-btn">Save naam</button>
+                </form>
+            </div>
+            {% endif %}
+
+            <div class="profile-card">
+                <div class="avatar-circle">
+                    {% if current_user.name and current_user.name|length >= 2 %}
+                        {{ current_user.name.split()[0][0]|upper }}{% if current_user.name.split()|length > 1 %}{{ current_user.name.split()[-1][0]|upper }}{% endif %}
+                    {% else %}
+                        {{ (current_user.name or 'U')[0]|upper }}
+                    {% endif %}
+                </div>
+                <div class="profile-info">
+                    <span class="profile-name">{{ current_user.name if current_user.name else 'Student' }}</span>
+                    <span class="profile-role">
+                        {% if current_user.role == 'admin' %}School admin{% else %}Student{% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Sign Out Button -->
+            <form method="POST" action="{{ url_for('logout') }}">
+                <button class="logout-btn" type="submit">
+                    <span>↪</span>
+                    <span>Sign out</span>
+                </button>
+            </form>
+
+        </div>
+
+    </aside>
+
+    <!-- ================= MAIN VIEW ================= -->
+    <main class="main-area">
+
+        <!-- Top Header matching EduPortal screenshot -->
+        <header class="topbar">
+
+            <div class="topbar-search">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" placeholder="Search students, teachers, classes...">
+            </div>
+
+            <div class="topbar-actions">
+                <button class="icon-btn" title="Toggle theme" type="button">
+                    <span>🌙</span>
+                </button>
+
+                <button class="icon-btn" title="Notifications" type="button">
+                    <span>🔔</span>
+                    <span class="badge-dot"></span>
+                </button>
+
+                {% if current_user.role == 'student' %}
+                <a href="{{ url_for('download_prediction_csv') }}" class="btn-export" title="Export my predictions">
+                    <span>📥</span>
+                    <span>Export</span>
+                </a>
+
+                <a href="{{ url_for('student_index') }}" class="btn-primary-cta">
+                    <span>+</span>
+                    <span>Predict performance</span>
+                </a>
+                {% else %}
+                <a href="{{ url_for('admin_history') }}" class="btn-export" title="Export records">
+                    <span>📥</span>
+                    <span>Export</span>
+                </a>
+
+                <a href="{{ url_for('admin_users') }}" class="btn-primary-cta">
+                    <span>+</span>
+                    <span>Add student</span>
+                </a>
+                {% endif %}
+            </div>
+
+        </header>
+
+        <!-- Flash Messages -->
+        <div style="padding: 18px 28px 0;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button type="button" class="alert-close" onclick="this.parentElement.remove()">×</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <!-- Dynamic Page Content -->
+        <section class="page-content">
+            {% block content %}{% endblock %}
+        </section>
+
+    </main>
+
+</div>
+
+{% else %}
+
+    <!-- Auth Pages: Login & Signup Container -->
+    <div class="auth-wrapper">
+        <div style="width: 100%; max-width: 440px;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <span>{{ message }}</span>
+                            <button type="button" class="alert-close" onclick="this.parentElement.remove()">×</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block auth_content %}{% endblock %}
+        </div>
+    </div>
+
+{% endif %}
+
+</body>
+</html>

@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+
+{% block title %}Predict Performance | EduPortal{% endblock %}
+
+{% block content %}
+<div class="page-header-block" style="display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:16px;">
+    <div>
+        <span class="eyebrow-tag">STUDENT PERFORMANCE ANALYTICS</span>
+        <h1 class="page-title">Predict Academic Performance</h1>
+        <p class="page-desc">Enter student academic metrics below to estimate performance outcome using Machine Learning.</p>
+    </div>
+
+    <a href="{{ url_for('batch_prediction') }}" class="btn-download btn-dl-xlsx" style="padding: 10px 16px; font-size:13px; font-weight:700;">
+        <span>📁</span>
+        <span>Batch Predict (Multiple Students via Excel/CSV) →</span>
+    </a>
+</div>
+
+<div class="form-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div>
+            <h2 style="font-size:16px; font-weight:700; color:var(--text-primary);">Academic Details</h2>
+            <p style="font-size:12.5px; color:var(--text-muted);">Fill in all 4 required indicators.</p>
+        </div>
+        <span class="pill-badge pill-paid">ML Model Online</span>
+    </div>
+
+    {% if features %}
+    <form method="POST" action="{{ url_for('student_index') }}">
+        <div class="input-grid">
+            {% for feature in features %}
+            <div class="form-group">
+                <label for="{{ feature }}" class="form-label">
+                    {{ feature.replace('_', ' ') }}
+                </label>
+
+                {% if feature == "Study_Hours" %}
+                <input
+                    id="{{ feature }}"
+                    name="{{ feature }}"
+                    type="number"
+                    min="0"
+                    max="24"
+                    step="any"
+                    value="{{ input_values.get(feature, '') }}"
+                    placeholder="e.g. 5"
+                    required
+                    class="form-control"
+                >
+                <span class="form-hint">Study hours per day (0–24).</span>
+
+                {% else %}
+                <input
+                    id="{{ feature }}"
+                    name="{{ feature }}"
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="any"
+                    value="{{ input_values.get(feature, '') }}"
+                    placeholder="e.g. 75"
+                    required
+                    class="form-control"
+                >
+                <span class="form-hint">Score from 0 to 100.</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions-bar">
+            <button type="submit" class="btn-primary-cta">
+                <span>⚡</span>
+                <span>Generate Prediction</span>
+            </button>
+
+            <a href="{{ url_for('student_index') }}" class="btn-secondary">
+                Reset Form
+            </a>
+        </div>
+    </form>
+    {% else %}
+    <div class="empty-state-block">
+        <span class="empty-state-icon">⚠️</span>
+        <span class="empty-state-title">Model inputs unavailable</span>
+        <p class="empty-state-text">Check the model pickle file and application server status.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Prediction Result Section -->
+{% if result %}
+<div class="result-card-wrap">
+
+    <!-- Left: Outcome Banner -->
+    {% set prediction = result.get('prediction', '') %}
+    {% set confidence = result.get('confidence') %}
+
+    <div class="outcome-box {% if prediction|lower == 'pass' %}outcome-pass{% elif prediction|lower == 'fail' %}outcome-fail{% endif %}">
+        <div class="outcome-icon-circle">
+            {% if prediction|lower == 'pass' %}✓{% elif prediction|lower == 'fail' %}!{% else %}★{% endif %}
+        </div>
+
+        <span style="font-size:11px; font-weight:700; letter-spacing:1px; color:var(--text-muted); text-transform:uppercase;">
+            PREDICTED OUTCOME
+        </span>
+
+        <h2 class="outcome-status-title">
+            {{ prediction|upper }}
+        </h2>
+
+        <p class="outcome-desc">
+            {% if prediction|lower == 'pass' %}
+                The ML model predicts that the student is likely to pass based on study hours, attendance and test marks.
+            {% elif prediction|lower == 'fail' %}
+                The ML model indicates risk of failing. Additional study time and attendance support is recommended.
+            {% else %}
+                Model prediction label: {{ prediction }}
+            {% endif %}
+        </p>
+
+        {% if confidence is not none %}
+        <div class="confidence-box">
+            <div class="confidence-row">
+                <span style="color:var(--text-secondary);">Model Confidence</span>
+                <span style="color:var(--accent-mint);">{{ "%.2f"|format(confidence|float) }}%</span>
+            </div>
+            <div class="progress-track">
+                <div class="progress-bar-fill" style="width: {{ confidence|float }}%;"></div>
+            </div>
+            <p style="font-size:10.5px; color:var(--text-muted); margin-top:8px;">
+                Calculated probability for the predicted class.
+            </p>
+        </div>
+        {% endif %}
+
+        <div style="margin-top:14px; font-size:12px; color:var(--status-green); font-weight:500;">
+            ✓ Saved to your MongoDB prediction history.
+        </div>
+    </div>
+
+    <!-- Right: Submitted Data Breakdown & Downloads -->
+    <div class="breakdown-box">
+        <h3 class="breakdown-title">Submitted Indicators</h3>
+
+        {% for key, value in result.get('inputs', {}).items() %}
+        <div class="detail-row">
+            <span class="detail-label">{{ key.replace('_', ' ') }}</span>
+            <span class="detail-val">{{ value }}</span>
+        </div>
+        {% endfor %}
+
+        <!-- Download Buttons (CSV and Excel) -->
+        <div class="download-actions-card">
+            <span class="download-title">📥 Apna data save karein (CSV ya Excel):</span>
+            <div class="download-btn-group">
+                <a href="{{ url_for('download_prediction_csv') }}" class="btn-download btn-dl-csv" title="CSV format mein download karein">
+                    <span>📄</span>
+                    <span>Download CSV</span>
+                </a>
+                <a href="{{ url_for('download_prediction_excel') }}" class="btn-download btn-dl-xlsx" title="Excel format mein download karein">
+                    <span>📊</span>
+                    <span>Download Excel</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endif %}
+
+{% endblock %}

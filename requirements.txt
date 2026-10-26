@@ -1,0 +1,9 @@
+
+Flask
+pymongo[srv]
+python-dotenv
+numpy
+pandas
+openpyxl
+scikit-learn==1.6.1
+
